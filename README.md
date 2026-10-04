@@ -94,6 +94,18 @@ O sistema foi concebido com forte separação de responsabilidades:
 
 ---
 
+## ☁️ Deploy na Vercel e Produção
+
+### 1. Frontend & Serverless na Vercel
+O projeto é 100% compatível com a **Vercel** (Next.js 16 App Router).
+- Basta conectar o repositório do GitHub ao painel da [Vercel](https://vercel.com/new).
+- O build (`next build`) e as páginas são geradas automaticamente.
+
+> 💡 **Nota sobre Executáveis Binários (`yt-dlp` / `FFmpeg`):**
+> Em ambientes Serverless tradicionais (como Vercel Serverless Functions com limites de tempo e pacotes read-only), configure o modo `MEDIA_PROVIDER=worker` apontando para um backend/worker dedicado (`WORKER_URL`) ou utilize uma VPS / Docker (Render, Railway, Fly.io, VPS Linux/Docker) caso queira executar o `yt-dlp` com o motor local `LocalYtDlpProvider`.
+
+---
+
 ## 🧪 Rotas e Endpoints
 
 | Rota | Método | Descrição |
