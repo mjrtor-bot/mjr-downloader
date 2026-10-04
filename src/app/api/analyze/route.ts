@@ -83,7 +83,6 @@ export async function POST(request: Request) {
           error: {
             code: 'PROVIDER_UNAVAILABLE',
             message: 'O serviço de processamento de mídia não está operacional no servidor no momento.',
-            details: status.details,
           },
         },
         { status: 503 }
@@ -115,14 +114,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const errorMessage = err instanceof Error ? err.message : 'Erro interno ao processar a URL.';
+    console.error('ANALYSIS_ERROR', err);
 
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'ANALYSIS_ERROR',
-          message: errorMessage,
+          message: 'Não foi possível analisar esta mídia no momento.',
         },
       },
       { status: 500 }
