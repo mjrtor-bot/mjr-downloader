@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  <!-- Background Card -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="none" stroke="#334155" stroke-width="4" stroke-opacity="0.4" />
+
+  <!-- Cloud Shape -->
+  <path d="M372 340H144c-35.3 0-64-28.7-64-64 0-30.8 21.8-56.6 51.1-62.5 5.5-47.5 45.9-84.5 94.9-84.5 40.5 0 75.3 25.4 89.2 61.6 8.9-4.2 18.8-6.6 29.3-6.6 37.6 0 68 30.4 68 68 0 4.6-.5 9-1.3 13.3 34.6 6.3 60.8 36.4 60.8 72.7 0 40.9-33.1 74-74 74z" fill="none" stroke="#475569" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Download Arrow Highlight -->
+  <path d="M256 220v140m0 0l-45-45m45 45l45-45" fill="none" stroke="url(#iconGrad)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Base bar -->
+  <path d="M190 400h132" fill="none" stroke="url(#iconGrad)" stroke-width="24" stroke-linecap="round" />
+</svg>
