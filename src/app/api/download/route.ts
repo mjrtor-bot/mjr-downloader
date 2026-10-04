@@ -99,12 +99,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.error('DOWNLOAD_STREAM_ERROR', err);
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'DOWNLOAD_STREAM_ERROR',
-          message: err instanceof Error ? err.message : 'Falha ao iniciar stream do download.',
+          message: 'Não foi possível iniciar o download no momento.',
         },
       },
       { status: 500 }
