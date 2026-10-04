@@ -592,6 +592,8 @@ export class LocalYtDlpProvider implements IMediaProvider {
       sanitizedFormat,
       '--socket-timeout',
       '30',
+      '--max-filesize',
+      String(Number(process.env.MAX_DOWNLOAD_SIZE_BYTES) || 524288000),
     ];
 
     if (ffmpegPath && ffmpegPath !== 'ffmpeg') {
