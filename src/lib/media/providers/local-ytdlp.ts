@@ -305,12 +305,13 @@ export class LocalYtDlpProvider implements IMediaProvider {
       '--no-playlist',
       '--skip-download',
       '--no-warnings',
+      '--geo-bypass',
       '--socket-timeout',
       '20',
       '--max-filesize',
       '500M',
       '--extractor-args',
-      'youtube:player_client=android,web',
+      'youtube:player_client=android,web,web_safari,tv',
       '--',
       url,
     ];
@@ -592,6 +593,7 @@ export class LocalYtDlpProvider implements IMediaProvider {
       ...runner.prefixArgs,
       '--no-playlist',
       '--no-warnings',
+      '--geo-bypass',
       '-f',
       sanitizedFormat,
       '--socket-timeout',
@@ -599,7 +601,7 @@ export class LocalYtDlpProvider implements IMediaProvider {
       '--max-filesize',
       String(Number(process.env.MAX_DOWNLOAD_SIZE_BYTES) || 524288000),
       '--extractor-args',
-      'youtube:player_client=android,web',
+      'youtube:player_client=android,web,web_safari,tv',
     ];
 
     if (ffmpegPath && ffmpegPath !== 'ffmpeg') {

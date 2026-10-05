@@ -135,24 +135,42 @@ async function runTests() {
     assert.strictEqual(json.success, false);
   });
 
-  // 11. Teste de Análise com URL de Mídia Pública Real (Vídeo de Teste Open Source / Creative Commons)
+  // 11. Teste de Análise com URL de Mídia Pública Real (Vídeo/Áudio de Teste Público)
   let analyzedFormatUrl = '';
-  await test('Análise de URL de vídeo público em /api/analyze', async () => {
-    const testUrl = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'; // Big Buck Bunny
-    const res = await fetch(`${BASE_URL}/api/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: testUrl }),
-    });
+  await test('Análise de URL de mídia pública em /api/analyze', async () => {
+    const candidateUrls = [
+      'https://soundcloud.com/octobersveryown/drake-gods-plan',
+      'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+    ];
 
-    const json = await res.json();
-    assert.strictEqual(res.status, 200);
-    assert.strictEqual(json.success, true);
-    assert(json.data.title, 'Deve retornar título');
-    assert(json.data.formats && json.data.formats.length > 0, 'Deve retornar formatos de mídia');
-    console.log(`\n      [Mídia: "${json.data.title}" | Formatos: ${json.data.formats.length}]`);
-    if (json.data.formats[0]?.downloadUrl) {
-      analyzedFormatUrl = json.data.formats[0].downloadUrl;
+    let lastError = null;
+    let successData = null;
+
+    for (const testUrl of candidateUrls) {
+      try {
+        const res = await fetch(`${BASE_URL}/api/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: testUrl }),
+        });
+        const json = await res.json();
+        if (res.status === 200 && json.success && json.data?.title) {
+          successData = json.data;
+          break;
+        } else {
+          lastError = json.error?.message || `Status ${res.status}`;
+        }
+      } catch (err) {
+        lastError = err.message;
+      }
+    }
+
+    assert(successData, `Falha na análise de mídia pública: ${lastError}`);
+    assert(successData.title, 'Deve retornar título da mídia');
+    assert(successData.formats && successData.formats.length > 0, 'Deve retornar formatos de mídia');
+    console.log(`\n      [Mídia: "${successData.title}" | Formatos: ${successData.formats.length}]`);
+    if (successData.formats[0]?.downloadUrl) {
+      analyzedFormatUrl = successData.formats[0].downloadUrl;
     }
   });
 

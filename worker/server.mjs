@@ -89,7 +89,7 @@ app.post('/api/analyze', auth, async (req, res) => {
     if (!/^https?:\/\//i.test(url)) {
       return res.status(400).json({ error: 'invalid url' });
     }
-    const raw = await run(['--dump-single-json', '--no-playlist', '--skip-download', '--no-warnings', '--extractor-args', 'youtube:player_client=android,web', '--', url]);
+    const raw = await run(['--dump-single-json', '--no-playlist', '--skip-download', '--no-warnings', '--geo-bypass', '--extractor-args', 'youtube:player_client=android,web,web_safari,tv', '--', url]);
     const r = JSON.parse(raw);
     const formats = [
       {
@@ -155,8 +155,9 @@ app.get('/api/download', auth, (req, res) => {
   const args = [
     '--no-playlist',
     '--no-warnings',
+    '--geo-bypass',
     '--extractor-args',
-    'youtube:player_client=android,web',
+    'youtube:player_client=android,web,web_safari,tv',
     '-f',
     format,
     '--max-filesize',
