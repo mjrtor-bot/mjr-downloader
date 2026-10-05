@@ -1,11 +1,36 @@
 import express from 'express';
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 app.use(express.json({ limit: '32kb' }));
 
 const PORT = Number(process.env.PORT) || 10000;
 const KEY = process.env.WORKER_API_KEY || '';
+
+function resolveBinary(name, envVar) {
+  if (envVar && fs.existsSync(envVar)) return envVar;
+  const candidates = [
+    path.join(__dirname, 'bin', name),
+    path.join(__dirname, '..', 'bin', name),
+    `/usr/local/bin/${name}`,
+    `/usr/bin/${name}`,
+    name,
+  ];
+  for (const cand of candidates) {
+    if (cand !== name && fs.existsSync(cand)) {
+      return cand;
+    }
+  }
+  return name;
+}
+
+const getYtDlpCmd = () => resolveBinary('yt-dlp', process.env.YTDLP_PATH);
+const getFfmpegCmd = () => resolveBinary('ffmpeg', process.env.FFMPEG_PATH);
 
 const auth = (req, res, next) => {
   if (KEY && req.get('authorization') !== `Bearer ${KEY}`) {
@@ -16,7 +41,8 @@ const auth = (req, res, next) => {
 
 const run = (args, timeout = 35000) => {
   return new Promise((resolve, reject) => {
-    const proc = spawn('yt-dlp', args, { shell: false });
+    const bin = getYtDlpCmd();
+    const proc = spawn(bin, args, { shell: false });
     let stdout = '';
     let stderr = '';
 
@@ -51,9 +77,9 @@ const run = (args, timeout = 35000) => {
 app.get('/health', async (req, res) => {
   try {
     const version = (await run(['--version'], 5000)).trim();
-    res.json({ ok: true, version, ffmpeg: true });
-  } catch {
-    res.status(503).json({ ok: false });
+    res.json({ ok: true, version, ffmpeg: true, engine: 'worker-service' });
+  } catch (err) {
+    res.status(503).json({ ok: false, error: err instanceof Error ? err.message : 'unhealthy' });
   }
 });
 
@@ -124,6 +150,8 @@ app.get('/api/download', auth, (req, res) => {
   res.setHeader('Content-Type', ext === 'mp3' ? 'audio/mpeg' : 'video/mp4');
   res.setHeader('Content-Disposition', `attachment; filename="mjr_download.${ext}"`);
 
+  const ffmpegPath = getFfmpegCmd();
+
   const args = [
     '--no-playlist',
     '--no-warnings',
@@ -132,6 +160,10 @@ app.get('/api/download', auth, (req, res) => {
     '--max-filesize',
     String(Number(process.env.MAX_DOWNLOAD_SIZE_BYTES) || 524288000),
   ];
+
+  if (ffmpegPath && ffmpegPath !== 'ffmpeg') {
+    args.push('--ffmpeg-location', ffmpegPath);
+  }
 
   if (ext === 'mp3') {
     args.push('-x', '--audio-format', 'mp3');
@@ -142,7 +174,8 @@ app.get('/api/download', auth, (req, res) => {
 
   args.push('-o', '-', '--', url);
 
-  const proc = spawn('yt-dlp', args, { shell: false });
+  const bin = getYtDlpCmd();
+  const proc = spawn(bin, args, { shell: false });
   proc.stdout.pipe(res);
   proc.stderr.on('data', (d) => {
     console.error(String(d));
