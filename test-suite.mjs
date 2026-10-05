@@ -169,8 +169,9 @@ async function runTests() {
     assert(successData.title, 'Deve retornar título da mídia');
     assert(successData.formats && successData.formats.length > 0, 'Deve retornar formatos de mídia');
     console.log(`\n      [Mídia: "${successData.title}" | Formatos: ${successData.formats.length}]`);
-    if (successData.formats[0]?.downloadUrl) {
-      analyzedFormatUrl = successData.formats[0].downloadUrl;
+    const chosenFormat = successData.formats.find((f) => f.isRecommended) || successData.formats[0];
+    if (chosenFormat?.downloadUrl) {
+      analyzedFormatUrl = chosenFormat.downloadUrl;
     }
   });
 

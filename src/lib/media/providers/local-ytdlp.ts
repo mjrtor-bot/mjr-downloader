@@ -456,6 +456,12 @@ export class LocalYtDlpProvider implements IMediaProvider {
       },
     ];
 
+    // Verificar se existe alguma faixa de vídeo nos formatos brutos
+    const hasAnyVideo =
+      rawFormats.length > 0
+        ? rawFormats.some((f) => (f.vcodec && f.vcodec !== 'none') || (f.height && f.height > 0))
+        : true;
+
     // Verificar quais alturas realmente existem nos formatos brutos
     const availableHeights = new Set<number>();
     for (const f of rawFormats) {
@@ -464,27 +470,30 @@ export class LocalYtDlpProvider implements IMediaProvider {
       }
     }
 
-    for (const preset of videoPresets) {
-      // Se conhecemos as alturas disponíveis e nenhuma atinge o patamar, podemos ajustar ou incluir
-      const targetHeight = Number.parseInt(preset.resolution, 10);
-      const isAvailable = availableHeights.size === 0 || Array.from(availableHeights).some((h) => h >= targetHeight);
+    // 1. Adicionar presets inteligentes e recomendados (Video + Audio) somente se a mídia tiver vídeo
+    if (hasAnyVideo) {
+      for (const preset of videoPresets) {
+        // Se conhecemos as alturas disponíveis e nenhuma atinge o patamar, podemos ajustar ou incluir
+        const targetHeight = Number.parseInt(preset.resolution, 10);
+        const isAvailable = availableHeights.size === 0 || Array.from(availableHeights).some((h) => h >= targetHeight);
 
-      if (isAvailable || targetHeight <= 720) {
-        list.push({
-          id: preset.id,
-          formatId: preset.formatSelector,
-          extension: preset.extension,
-          resolution: preset.resolution,
-          height: targetHeight,
-          filesize: null,
-          filesizeFormatted: 'Processado no download',
-          hasVideo: true,
-          hasAudio: true,
-          qualityLabel: preset.qualityLabel,
-          note: preset.note,
-          isRecommended: preset.isRecommended,
-          downloadUrl: `/api/download?url=${safeUrlParam}&format=${encodeURIComponent(preset.formatSelector)}&ext=${preset.extension}&title=${safeTitleParam}`,
-        });
+        if (isAvailable || targetHeight <= 720) {
+          list.push({
+            id: preset.id,
+            formatId: preset.formatSelector,
+            extension: preset.extension,
+            resolution: preset.resolution,
+            height: targetHeight,
+            filesize: null,
+            filesizeFormatted: 'Processado no download',
+            hasVideo: true,
+            hasAudio: true,
+            qualityLabel: preset.qualityLabel,
+            note: preset.note,
+            isRecommended: preset.isRecommended,
+            downloadUrl: `/api/download?url=${safeUrlParam}&format=${encodeURIComponent(preset.formatSelector)}&ext=${preset.extension}&title=${safeTitleParam}`,
+          });
+        }
       }
     }
 
@@ -499,7 +508,7 @@ export class LocalYtDlpProvider implements IMediaProvider {
         hasVideo: false,
         hasAudio: true,
         note: 'Conversão em áudio MP3 de alta fidelidade',
-        isRecommended: false,
+        isRecommended: !hasAnyVideo,
       },
       {
         id: 'audio_m4a_best',
