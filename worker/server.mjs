@@ -91,20 +91,63 @@ app.post('/api/analyze', auth, async (req, res) => {
     }
     const raw = await run(['--dump-single-json', '--no-playlist', '--skip-download', '--no-warnings', '--geo-bypass', '--extractor-args', 'youtube:player_client=android,web,web_safari,tv', '--', url]);
     const r = JSON.parse(raw);
-    const formats = [
-      {
-        id: 'best_720p',
-        formatId: 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
-        extension: 'mp4',
-        resolution: '720p',
-        filesize: null,
-        filesizeFormatted: 'Processado no download',
-        hasVideo: true,
-        hasAudio: true,
-        qualityLabel: 'HD 720p',
-        isRecommended: true,
-        downloadUrl: '',
-      },
+    const rawFormats = r.formats || [];
+
+    const hasAnyVideo =
+      rawFormats.length > 0
+        ? rawFormats.some((f) => (f.vcodec && f.vcodec !== 'none') || (f.height && f.height > 0))
+        : true;
+
+    const formats = [];
+
+    if (hasAnyVideo) {
+      formats.push(
+        {
+          id: 'best_1080p',
+          formatId: 'bestvideo[ext=mp4][vcodec^=avc1][height<=1080]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
+          extension: 'mp4',
+          resolution: '1080p',
+          filesize: null,
+          filesizeFormatted: 'Processado no download',
+          hasVideo: true,
+          hasAudio: true,
+          qualityLabel: 'Full HD 1080p (Alta Qualidade)',
+          isRecommended: true,
+          note: 'Vídeo H.264 + Áudio AAC em MP4 universal',
+          downloadUrl: '',
+        },
+        {
+          id: 'best_720p',
+          formatId: 'bestvideo[ext=mp4][vcodec^=avc1][height<=720]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+          extension: 'mp4',
+          resolution: '720p',
+          filesize: null,
+          filesizeFormatted: 'Processado no download',
+          hasVideo: true,
+          hasAudio: true,
+          qualityLabel: 'HD 720p (Padrão)',
+          isRecommended: false,
+          note: 'Excelente equilíbrio entre qualidade e tamanho',
+          downloadUrl: '',
+        },
+        {
+          id: 'best_480p',
+          formatId: 'bestvideo[ext=mp4][vcodec^=avc1][height<=480]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]/best',
+          extension: 'mp4',
+          resolution: '480p',
+          filesize: null,
+          filesizeFormatted: 'Processado no download',
+          hasVideo: true,
+          hasAudio: true,
+          qualityLabel: 'SD 480p (Econômico)',
+          isRecommended: false,
+          note: 'Arquivo mais leve para conexões móveis',
+          downloadUrl: '',
+        }
+      );
+    }
+
+    formats.push(
       {
         id: 'audio_mp3_best',
         formatId: 'bestaudio/best',
@@ -114,10 +157,27 @@ app.post('/api/analyze', auth, async (req, res) => {
         filesizeFormatted: 'Processado no download',
         hasVideo: false,
         hasAudio: true,
-        qualityLabel: 'Áudio MP3',
+        qualityLabel: 'Áudio MP3 (Melhor Qualidade)',
+        note: 'Conversão em áudio MP3 de alta fidelidade',
+        isRecommended: !hasAnyVideo,
         downloadUrl: '',
       },
-    ];
+      {
+        id: 'audio_m4a_best',
+        formatId: 'bestaudio[ext=m4a]/bestaudio/best',
+        extension: 'm4a',
+        resolution: 'Áudio',
+        filesize: null,
+        filesizeFormatted: 'Processado no download',
+        hasVideo: false,
+        hasAudio: true,
+        qualityLabel: 'Áudio M4A / AAC (Original)',
+        note: 'Faixa original do áudio sem recodificação',
+        isRecommended: false,
+        downloadUrl: '',
+      }
+    );
+
     res.json({
       data: {
         id: r.id || 'unknown',
@@ -165,7 +225,7 @@ app.get('/api/download', auth, (req, res) => {
   ];
 
   if (ffmpegPath && ffmpegPath !== 'ffmpeg') {
-    args.push('--ffmpeg-location', ffmpegPath);
+    args.push('--ffmpeg-location', path.dirname(ffmpegPath));
   }
 
   if (ext === 'mp3') {

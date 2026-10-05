@@ -35,16 +35,35 @@ export class WorkerMediaProvider implements IMediaProvider {
     });
     if (!res.ok) throw new Error('Falha ao analisar a mídia no worker.');
     const data = await res.json();
-    return data.data;
+    const mediaInfo: MediaInfo = data.data;
+
+    // Garantir que as URLs de download apontem para o endpoint da aplicação
+    if (mediaInfo && Array.isArray(mediaInfo.formats)) {
+      const safeUrl = encodeURIComponent(mediaInfo.originalUrl || url);
+      const safeTitle = encodeURIComponent((mediaInfo.title || 'midia').slice(0, 80));
+      for (const f of mediaInfo.formats) {
+        if (!f.downloadUrl) {
+          f.downloadUrl = `/api/download?url=${safeUrl}&format=${encodeURIComponent(f.formatId)}&ext=${f.extension}&title=${safeTitle}`;
+        }
+      }
+    }
+
+    return mediaInfo;
   }
 
-  public async getDownloadStream(url:string, formatId:string, customExtension='mp4'): Promise<DownloadStreamResult> {
+  public async getDownloadStream(url: string, formatId: string, customExtension = 'mp4'): Promise<DownloadStreamResult> {
     if (!this.workerUrl) throw new Error('Serviço de processamento não configurado.');
     const endpoint = new URL('/api/download', this.workerUrl);
-    endpoint.searchParams.set('url', url); endpoint.searchParams.set('format', formatId); endpoint.searchParams.set('ext', customExtension);
-    const res = await fetch(endpoint, { headers:this.headers(), signal:AbortSignal.timeout(30000) });
+    endpoint.searchParams.set('url', url);
+    endpoint.searchParams.set('format', formatId);
+    endpoint.searchParams.set('ext', customExtension);
+    const res = await fetch(endpoint, { headers: this.headers() });
     if (!res.ok || !res.body) throw new Error('Falha ao iniciar o download no worker.');
     const nodeStream = Readable.fromWeb(res.body as never);
-    return { stream:nodeStream, filename:`mjr_download.${customExtension}`, contentType:res.headers.get('content-type') || 'application/octet-stream' };
+    return {
+      stream: nodeStream,
+      filename: `mjr_download.${customExtension}`,
+      contentType: res.headers.get('content-type') || 'application/octet-stream',
+    };
   }
 }
