@@ -24,3 +24,19 @@ services:
         value: /usr/local/bin/yt-dlp
       - key: FFMPEG_PATH
         value: /usr/bin/ffmpeg
+
+  - type: web
+    name: mjr-downloader-worker
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: ./render-build.sh
+    startCommand: node worker/server.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MAX_DOWNLOAD_SIZE_BYTES
+        value: 524288000
