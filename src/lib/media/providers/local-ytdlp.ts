@@ -310,6 +310,8 @@ export class LocalYtDlpProvider implements IMediaProvider {
       '20',
       '--max-filesize',
       '500M',
+      '--extractor-args',
+      'youtube:player_client=android,web',
       '--',
       url,
     ];
@@ -598,6 +600,8 @@ export class LocalYtDlpProvider implements IMediaProvider {
       '30',
       '--max-filesize',
       String(Number(process.env.MAX_DOWNLOAD_SIZE_BYTES) || 524288000),
+      '--extractor-args',
+      'youtube:player_client=android,web',
     ];
 
     if (ffmpegPath && ffmpegPath !== 'ffmpeg') {
