@@ -144,6 +144,8 @@ export class LocalYtDlpProvider implements IMediaProvider {
     // Candidatos padrão por ordem de prioridade
     candidates.push(
       { cmd: 'yt-dlp', prefixArgs: [] },
+      { cmd: '/usr/local/bin/yt-dlp', prefixArgs: [] },
+      { cmd: '/usr/bin/yt-dlp', prefixArgs: [] },
       { cmd: 'py', prefixArgs: ['-m', 'yt_dlp'] },
       { cmd: 'python', prefixArgs: ['-m', 'yt_dlp'] },
       { cmd: 'python3', prefixArgs: ['-m', 'yt_dlp'] },
@@ -186,6 +188,8 @@ export class LocalYtDlpProvider implements IMediaProvider {
     const candidates: string[] = [
       custom,
       'ffmpeg',
+      '/usr/bin/ffmpeg',
+      '/usr/local/bin/ffmpeg',
       path.join(localAppData, 'Microsoft', 'WinGet', 'Links', 'ffmpeg.exe'),
       path.join(userProfile, 'scoop', 'shims', 'ffmpeg.exe'),
       'C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe',
@@ -406,18 +410,18 @@ export class LocalYtDlpProvider implements IMediaProvider {
     const videoPresets = [
       {
         id: 'best_1080p',
-        formatSelector: 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
+        formatSelector: 'bestvideo[ext=mp4][vcodec^=avc1][height<=1080]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
         qualityLabel: 'Full HD 1080p (Alta Qualidade)',
         resolution: '1080p',
         extension: 'mp4',
         hasVideo: true,
         hasAudio: true,
         isRecommended: true,
-        note: 'Melhor definição de vídeo combinada com áudio',
+        note: 'Vídeo H.264 + Áudio AAC em MP4 universal',
       },
       {
         id: 'best_720p',
-        formatSelector: 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+        formatSelector: 'bestvideo[ext=mp4][vcodec^=avc1][height<=720]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best',
         qualityLabel: 'HD 720p (Padrão)',
         resolution: '720p',
         extension: 'mp4',
@@ -428,7 +432,7 @@ export class LocalYtDlpProvider implements IMediaProvider {
       },
       {
         id: 'best_480p',
-        formatSelector: 'bestvideo[height<=480]+bestaudio/best[height<=480]/best',
+        formatSelector: 'bestvideo[ext=mp4][vcodec^=avc1][height<=480]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]/best',
         qualityLabel: 'SD 480p (Econômico)',
         resolution: '480p',
         extension: 'mp4',
@@ -439,7 +443,7 @@ export class LocalYtDlpProvider implements IMediaProvider {
       },
       {
         id: 'best_360p',
-        formatSelector: 'bestvideo[height<=360]+bestaudio/best[height<=360]/best',
+        formatSelector: 'bestvideo[ext=mp4][vcodec^=avc1][height<=360]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best',
         qualityLabel: '360p (Mínimo)',
         resolution: '360p',
         extension: 'mp4',
@@ -600,9 +604,15 @@ export class LocalYtDlpProvider implements IMediaProvider {
       args.push('--ffmpeg-location', path.dirname(ffmpegPath));
     }
 
-    // Se for áudio MP3 que precisa de conversão
+    // Configuração de saída e transcodificação para streaming seguro
     if (cleanExt === 'mp3') {
       args.push('-x', '--audio-format', 'mp3', '--audio-quality', '0');
+      args.push('--downloader-args', 'ffmpeg:-f mp3 -c:a libmp3lame -b:a 192k');
+    } else if (cleanExt === 'mp4' || cleanExt === 'm4a') {
+      // Fragmented MP4 permite streaming sem corromper o moov atom em stdout
+      args.push('--downloader-args', 'ffmpeg:-f mp4 -movflags frag_keyframe+empty_moov+default_base_moof');
+    } else if (cleanExt === 'webm') {
+      args.push('--downloader-args', 'ffmpeg:-f webm');
     }
 
     // Enviar para stdout
@@ -616,6 +626,23 @@ export class LocalYtDlpProvider implements IMediaProvider {
     const stream = child.stdout as Readable;
     const filename = sanitizeFilename('mjr_download', cleanExt);
     const contentType = getMimeType(cleanExt);
+
+    // Garantir encerramento limpo do processo filho caso a stream seja interrompida
+    const cleanupProcess = () => {
+      if (child.exitCode === null && !child.killed) {
+        try {
+          child.kill('SIGTERM');
+        } catch {
+          // Ignorar erros se o processo já estiver finalizado
+        }
+      }
+    };
+
+    stream.on('close', cleanupProcess);
+    stream.on('error', cleanupProcess);
+    child.on('error', () => {
+      stream.destroy();
+    });
 
     return {
       stream,

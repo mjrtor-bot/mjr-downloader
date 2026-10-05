@@ -1,10 +1,10 @@
 // test-suite.mjs
 import assert from 'node:assert';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
 async function runTests() {
-  console.log('🧪 Iniciando Bateria de Testes Completa do MJR Downloader...\n');
+  console.log(`🧪 Iniciando Bateria de Testes do MJR Downloader em: ${BASE_URL}\n`);
   let passed = 0;
   let total = 0;
 
@@ -68,7 +68,7 @@ async function runTests() {
     assert.strictEqual(data.status, 'healthy');
     assert.strictEqual(data.provider.available, true);
     assert(data.provider.ffmpegAvailable === true, 'FFmpeg deve estar disponível');
-    console.log(`\n      [Diagnóstico: yt-dlp ${data.provider.version}, ffmpeg=${data.provider.ffmpegAvailable}, provider=${data.provider.name}]`);
+    console.log(`\n      [Diagnóstico: yt-dlp ${data.provider.version}, ffmpeg=${data.provider.ffmpegAvailable}, provider=${data.provider.provider || data.provider.engine}]`);
   });
 
   // 6. Teste de URL vazia / inválida
@@ -182,6 +182,12 @@ async function runTests() {
   });
 
   console.log(`\n📊 Resultado Final: ${passed}/${total} testes passaram com sucesso!`);
+  if (passed < total) {
+    process.exitCode = 1;
+  }
 }
 
-runTests().catch(console.error);
+runTests().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

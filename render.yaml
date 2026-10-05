@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: mjr-downloader
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MEDIA_PROVIDER
+        value: local
+      - key: RATE_LIMIT_ANALYZE_MAX
+        value: 30
+      - key: RATE_LIMIT_DOWNLOAD_MAX
+        value: 15
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 60000
+      - key: MAX_DOWNLOAD_SIZE_BYTES
+        value: 524288000
+      - key: YTDLP_PATH
+        value: /usr/local/bin/yt-dlp
+      - key: FFMPEG_PATH
+        value: /usr/bin/ffmpeg

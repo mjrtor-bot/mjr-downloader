@@ -40,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# temporary test media files
+test_*.mp4
+test_*.m4a
+test_*.mp3
+test_*.webm
+test_output*
+
