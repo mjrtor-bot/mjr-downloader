@@ -51,6 +51,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Limitar parâmetros controlados pelo cliente antes de acionar o provedor.
+    // O seletor yt-dlp é uma expressão de formato, não um argumento de shell.
+    if (
+      format.length > 300 ||
+      !/^[a-zA-Z0-9_+.,/\[\]<>!=^*?:-]+$/.test(format) ||
+      !/^(mp4|webm|mkv|mp3|m4a|aac|ogg|opus|wav|flac)$/i.test(ext)
+    ) {
+      return NextResponse.json(
+        { success: false, error: { code: 'INVALID_FORMAT', message: 'Formato de download inválido.' } },
+        { status: 400 }
+      );
+    }
+
     // 2. Validação de Segurança da URL
     const validatedUrl = await validatePublicMediaUrl(rawUrl);
 
