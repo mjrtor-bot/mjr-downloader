@@ -595,7 +595,9 @@ export class LocalYtDlpProvider implements IMediaProvider {
     const ffmpegPath = await this.resolveFfmpeg();
 
     // Sanitizar formato para evitar caracteres perigosos
-    const sanitizedFormat = formatId.replace(/[^a-zA-Z0-9_+/=.[\]<>-]/g, '') || 'best';
+    // O formato já é validado na rota HTTP. Não remover operadores como ^ ou
+    // =: isso altera seletores válidos e pode baixar uma qualidade diferente.
+    const sanitizedFormat = formatId;
     const cleanExt = customExtension.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'mp4';
 
     const args = [
