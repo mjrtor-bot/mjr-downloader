@@ -116,7 +116,7 @@ export async function POST(request: Request) {
 
     console.error('ANALYSIS_ERROR', err);
 
-    const message = err instanceof Error ? err.message : 'Não foi possível analisar esta mídia no momento.';
+    const message = 'Não foi possível analisar esta mídia no momento.';
 
     return NextResponse.json(
       {
