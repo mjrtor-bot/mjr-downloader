@@ -49,10 +49,15 @@ function isPrivateIPv4(ip: string): boolean {
   // 192.168.0.0/16 (Rede Privada RFC 1918)
   if (a === 192 && b === 168) return true;
 
-  // 192.0.0.0/24 e 192.168.0.0/16 são tratados acima.\n  // 198.18.0.0/15 (Benchmarking)
+  // 192.0.0.0/24 e 192.168.0.0/16 são tratados acima.
+  // 198.18.0.0/15 (Benchmarking)
   if (a === 198 && (b === 18 || b === 19)) return true;
 
-  // 192.0.0.0/24, 198.18.0.0/15 e demais faixas especiais\n  if (a === 192 && b === 88) return true; // 192.88.99.0/24, reservado\n  if (a === 198 && (b === 51)) return true; // 198.51.100.0/24, documentação\n  if (a === 203 && b === 0) return true; // 203.0.113.0/24, documentação\n\n  // 224.0.0.0/4 (Multicast)
+  // 192.0.0.0/24, 198.18.0.0/15 e demais faixas especiais
+  if (a === 192 && b === 88 && parts[2] === 99) return true; // 192.88.99.0/24, reservado
+  if (a === 198 && b === 51 && parts[2] === 100) return true; // 198.51.100.0/24, documentação
+  if (a === 203 && b === 0 && parts[2] === 113) return true; // 203.0.113.0/24, documentação\n
+  // 224.0.0.0/4 (Multicast)
   if (a >= 224 && a <= 239) return true;
 
   // 240.0.0.0/4 (Reservado para uso futuro / Broadcast 255.255.255.255)
