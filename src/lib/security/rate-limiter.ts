@@ -83,17 +83,16 @@ export function checkRateLimit(
  * Extrai o endereço IP do cliente a partir dos cabeçalhos da requisição
  */
 export function getClientIp(headers: Headers): string {
-  const forwardedFor = headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    const firstIp = forwardedFor.split(',')[0].trim();
-    if (firstIp) return firstIp;
+  // Only trust forwarding headers when a controlled ingress explicitly enables them.
+  // Otherwise a caller can spoof X-Forwarded-For and bypass per-IP limits.
+  if (process.env.TRUST_PROXY_HEADERS !== 'true') {
+    return 'untrusted-client';
   }
 
-  const realIp = headers.get('x-real-ip');
-  if (realIp) return realIp.trim();
+  const candidate =
+    headers.get('cf-connecting-ip') ||
+    headers.get('x-real-ip') ||
+    headers.get('x-forwarded-for')?.split(',')[0]?.trim();
 
-  const cfConnectingIp = headers.get('cf-connecting-ip');
-  if (cfConnectingIp) return cfConnectingIp.trim();
-
-  return '127.0.0.1';
+  return candidate?.trim() || 'unknown-client';
 }
