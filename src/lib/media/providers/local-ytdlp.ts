@@ -326,13 +326,25 @@ export class LocalYtDlpProvider implements IMediaProvider {
 
       let outBuffer = '';
       let errBuffer = '';
+      const MAX_METADATA_OUTPUT = 8 * 1024 * 1024;
+      const MAX_ERROR_OUTPUT = 64 * 1024;
+      let settled = false;
+      const fail = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        proc.kill('SIGTERM');
+        reject(error);
+      };
 
       proc.stdout.on('data', (chunk) => {
         outBuffer += chunk.toString();
+        if (outBuffer.length > MAX_METADATA_OUTPUT) {
+          fail(new Error('Resposta de metadados excedeu o limite permitido.'));
+        }
       });
 
       proc.stderr.on('data', (chunk) => {
-        errBuffer += chunk.toString();
+        errBuffer = (errBuffer + chunk.toString()).slice(-MAX_ERROR_OUTPUT);
       });
 
       const timer = setTimeout(() => {
@@ -341,16 +353,18 @@ export class LocalYtDlpProvider implements IMediaProvider {
         } catch {
           // Ignore
         }
-        reject(new Error('Tempo limite de análise da mídia excedido (timeout 35s).'));
+        fail(new Error('Tempo limite de análise da mídia excedido (timeout 35s).'));
       }, 35000);
 
       proc.on('error', (err) => {
         clearTimeout(timer);
-        reject(err);
+        fail(err);
       });
 
       proc.on('close', (code) => {
         clearTimeout(timer);
+        if (settled) return;
+        settled = true;
         if (code === 0) {
           resolve(outBuffer);
         } else {
